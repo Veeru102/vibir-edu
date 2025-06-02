@@ -48,23 +48,8 @@ cp .env.example .env
 # Edit .env with your configuration
 ```
 
-## Usage
 
-1. Start the API server:
-```bash
-python -m src.api.main
-```
 
-2. The API will be available at `http://localhost:8000`
-
-3. Available endpoints:
-   - `GET /`: Welcome message
-   - `POST /analyze-scenario/{scenario_id}`: Analyze a specific scenario
-   - `POST /analyze-all-scenarios`: Analyze all scenarios
-
-## Project Structure
-
-```
 vibir-edu/
 ├── src/
 │   ├── agents/
@@ -127,15 +112,3 @@ vibir-edu/
   ]
 }
 ```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.

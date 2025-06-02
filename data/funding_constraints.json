@@ -1,0 +1,27 @@
+{
+  "title_i_grant": {
+    "categories": ["Special Education Staff", "Instructional Aides"],
+    "locked": true,
+    "note": "Restricted federal funds"
+  },
+  "tech_grant_2023": {
+    "categories": ["Smartboards", "Laptops and Tablets"],
+    "locked": false,
+    "note": "Can only be spent on hardware"
+  },
+  "union_salaries": {
+    "categories": ["Math Teachers", "English Teachers", "Science Teachers"],
+    "editable": true,
+    "note": "Salary raises must comply with contract terms"
+  },
+  "general_fund": {
+    "categories": [
+      "Counseling Services",
+      "Professional Development",
+      "After-School Programs"
+    ],
+    "locked": false,
+    "editable": true,
+    "note": "General operating funds"
+  }
+} 

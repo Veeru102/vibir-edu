@@ -1,0 +1,48 @@
+[
+  {
+    "id": "raise_math_teachers",
+    "target_category": "Math Teachers",
+    "percentage": 0.05,
+    "source_fund": "union_salaries",
+    "is_mandated": false,
+    "is_reversible": false,
+    "reason_for_change": "Adjust salaries per contract clause to improve math performance"
+  },
+  {
+    "id": "cut_smartboards",
+    "target_category": "Smartboards",
+    "fixed_delta": -10000,
+    "source_fund": "tech_grant_2023",
+    "is_mandated": false,
+    "is_reversible": true,
+    "reason_for_change": "Redirect underused hardware funds due to maintenance issues"
+  },
+  {
+    "id": "add_counselors",
+    "target_category": "Counseling Services",
+    "fixed_delta": 25000,
+    "source_fund": "general_fund",
+    "is_mandated": false,
+    "is_reversible": true,
+    "reason_for_change": "Support student mental health with more counseling staff"
+  },
+  {
+    "id": "defer_training",
+    "target_category": "Professional Development",
+    "defer_months": 12,
+    "source_fund": "general_fund",
+    "is_mandated": false,
+    "is_reversible": true,
+    "reason_for_change": "Delay training rollout to free funds for immediate staffing needs"
+  },
+  {
+    "id": "launch_afterschool_stem",
+    "target_category": "After-School Programs",
+    "fixed_delta": 15000,
+    "source_fund": "general_fund",
+    "is_mandated": false,
+    "is_reversible": false,
+    "reason_for_change": "Launch new STEM enrichment program aligned with equity goals"
+  }
+]
+

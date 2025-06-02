@@ -1,0 +1,33 @@
+{
+  "goals": [
+    {
+      "category": "Math Teachers",
+      "objective": "Improve Algebra I pass rates",
+      "priority": "high",
+      "goal_type": "performance",
+      "horizon": "short-term"
+    },
+    {
+      "category": "Counseling Services",
+      "objective": "Reduce student-to-counselor ratio below 250:1",
+      "priority": "low",
+      "goal_type": "equity",
+      "horizon": "long-term"
+    },
+    {
+      "category": "Smartboards",
+      "objective": "Modernize classroom technology by 2026",
+      "priority": "medium",
+      "goal_type": "access",
+      "horizon": "long-term"
+    },
+    {
+      "category": "After-School Programs",
+      "objective": "Expand STEM enrichment opportunities",
+      "priority": "high",
+      "goal_type": "access",
+      "horizon": "medium-term"
+    }
+  ]
+}
+

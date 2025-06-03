@@ -1,5 +1,5 @@
 from crewai import Agent, Task, Crew
-from typing import List, Dict
+from typing import List, Dict, Tuple
 import json
 import re
 from ..models.data_models import OffsetRecommendation, FundingConstraint, BudgetDelta
@@ -32,138 +32,235 @@ class OffsetAdvisor:
                                  strategic_goals: List[Dict]) -> List[Dict]:
         """Get offset recommendations for budget changes."""
         try:
-            # Convert budget deltas to dictionary format if they're not already
-            budget_deltas_dict = {}
-            for delta in budget_deltas:
-                if isinstance(delta, dict):
-                    budget_deltas_dict[delta['category']] = {
-                        'old_amount': delta['old_amount'],
-                        'new_amount': delta['new_amount'],
-                        'delta': delta['delta']
-                    }
-                else:
-                    budget_deltas_dict[delta.category] = {
-                        'old_amount': delta.old_amount,
-                        'new_amount': delta.new_amount,
-                        'delta': delta.delta
-                    }
+            # Calculate net delta (total increase in spending)
+            net_delta = sum(delta.delta if isinstance(delta, BudgetDelta) else delta['delta'] 
+                          for delta in budget_deltas)
             
-            # Convert strategic goals to dictionary format if they're not already
-            strategic_goals_dict = []
-            for goal in strategic_goals:
-                if isinstance(goal, dict):
-                    strategic_goals_dict.append(goal)
-                else:
-                    strategic_goals_dict.append({
-                        'category': goal.category,
-                        'objective': goal.objective,
-                        'priority': goal.priority
-                    })
+            if net_delta <= 0:
+                return []  # No need for offsets if there's no net increase
+                
+            # Get current budget snapshot
+            current_budget = self._get_current_budget()
             
-            # Create task
-            task = Task(
-                description=f"""Analyze the following budget changes and strategic goals to provide offset recommendations:
-                
-                Budget Changes: {json.dumps(budget_deltas_dict, indent=2)}
-                Strategic Goals: {json.dumps(strategic_goals_dict, indent=2)}
-                
-                For each significant budget change, provide offset recommendations in the following format:
-                
-                Category: [Category Name]
-                Offset Amount: [Amount to offset]
-                Rationale: [Clear explanation of why this offset is recommended]
-                Impact: [Analysis of the impact on strategic goals and educational outcomes]
-                Implementation: [Specific steps to implement the offset]
-                
-                Focus on:
-                1. Aligning offsets with strategic goals
-                2. Minimizing negative impact on educational outcomes
-                3. Ensuring sustainable budget adjustments
-                4. Maintaining service quality
-                5. Supporting student success
-                
-                Provide quantitative analysis where possible, including:
-                - Percentage changes
-                - Absolute dollar amounts
-                - Impact on student outcomes
-                - Cost-benefit analysis
-                
-                IMPORTANT: You MUST follow this exact format for each category:
-                
-                Category: [Category Name]
-                Offset Amount: [Your offset amount here]
-                Rationale: [Your rationale here]
-                Impact: [Your impact analysis here]
-                Implementation: [Your implementation steps here]
-                
-                Do not include any other text or formatting. Each category should be analyzed separately with these exact headers.""",
-                expected_output="A detailed analysis of offset recommendations for budget changes, formatted as sections for each category with offset amounts, rationales, impacts, and implementation steps.",
-                agent=self.offset_agent
+            # Get candidate categories for offsets
+            candidate_categories = self._get_candidate_categories(
+                budget_deltas,
+                current_budget,
+                strategic_goals
             )
-
-            # Create and run crew
-            crew = Crew(
-                agents=[self.offset_agent],
-                tasks=[task],
-                verbose=True
+            
+            # Select offset sources
+            offset_sources = self._select_offset_sources(
+                net_delta,
+                candidate_categories,
+                current_budget,
+                strategic_goals
             )
-
-            result = crew.kickoff()
             
-            # Handle CrewOutput object
-            if hasattr(result, 'raw_output'):
-                output_text = result.raw_output
-            else:
-                output_text = str(result)
+            # Generate detailed recommendations using LLM
+            recommendations = self._generate_detailed_recommendations(
+                offset_sources,
+                budget_deltas,
+                strategic_goals
+            )
             
-            # Parse the output into structured recommendations
-            recommendations = []
-            sections = output_text.split('\n\n')
-            
-            for section in sections:
-                if not section.strip():
-                    continue
-                    
-                try:
-                    # Extract category
-                    category_match = re.search(r'Category:\s*(.+?)(?=\n|$)', section)
-                    if not category_match:
-                        continue
-                    category = category_match.group(1).strip()
-                    
-                    # Extract offset amount
-                    amount_match = re.search(r'Offset Amount:\s*(.+?)(?=\n|$)', section)
-                    offset_amount = amount_match.group(1).strip() if amount_match else ""
-                    
-                    # Extract rationale
-                    rationale_match = re.search(r'Rationale:\s*(.+?)(?=\n|$)', section, re.DOTALL)
-                    rationale = rationale_match.group(1).strip() if rationale_match else ""
-                    
-                    # Extract impact
-                    impact_match = re.search(r'Impact:\s*(.+?)(?=\n|$)', section, re.DOTALL)
-                    impact = impact_match.group(1).strip() if impact_match else ""
-                    
-                    # Extract implementation
-                    impl_match = re.search(r'Implementation:\s*(.+?)(?=\n|$)', section, re.DOTALL)
-                    implementation = impl_match.group(1).strip() if impl_match else ""
-                    
-                    if category and (offset_amount or rationale or impact or implementation):
-                        recommendations.append({
-                            'category': category,
-                            'offset_amount': offset_amount,
-                            'rationale': rationale,
-                            'impact': impact,
-                            'implementation': implementation
-                        })
-                except Exception as e:
-                    print(f"Error parsing section: {str(e)}")
-                    continue
-                    
             return recommendations
             
         except Exception as e:
             print(f"Error generating offset recommendations: {str(e)}")
             return []
+
+    def _get_current_budget(self) -> Dict[str, float]:
+        """Get current budget snapshot."""
+        # This should be implemented to get the current budget state
+        # For now, return an empty dict
+        return {}
+
+    def _get_candidate_categories(self,
+                                budget_deltas: List[BudgetDelta],
+                                current_budget: Dict[str, float],
+                                strategic_goals: List[Dict]) -> List[Dict]:
+        """Get list of candidate categories for offsets."""
+        candidates = []
+        
+        # Get categories that were increased
+        increased_categories = {
+            delta.category if isinstance(delta, BudgetDelta) else delta['category']
+            for delta in budget_deltas
+            if (isinstance(delta, BudgetDelta) and delta.delta > 0) or
+               (isinstance(delta, dict) and delta['delta'] > 0)
+        }
+        
+        # Get categories that are locked
+        locked_categories = set()
+        if hasattr(self.funding_constraints, 'locked_categories'):
+            locked_categories = set(self.funding_constraints.locked_categories)
+        elif isinstance(self.funding_constraints, dict):
+            locked_categories = {
+                category for category, constraint in self.funding_constraints.items()
+                if constraint.get('locked', False)
+            }
+        
+        # Create candidate list
+        for category, amount in current_budget.items():
+            # Skip if category was increased or is locked
+            if category in increased_categories or category in locked_categories:
+                continue
+                
+            # Get strategic goal priority
+            goal = next(
+                (g for g in strategic_goals if g['category'] == category),
+                {'priority': 'medium'}  # Default priority if not found
+            )
+            
+            candidates.append({
+                'category': category,
+                'current_amount': amount,
+                'priority': goal['priority'],
+                'objective': goal.get('objective', '')
+            })
+        
+        return candidates
+
+    def _select_offset_sources(self,
+                             net_delta: float,
+                             candidates: List[Dict],
+                             current_budget: Dict[str, float],
+                             strategic_goals: List[Dict]) -> List[Dict]:
+        """Select categories to offset the net delta."""
+        # Sort candidates by priority (low first) and current amount (high to low)
+        sorted_candidates = sorted(
+            candidates,
+            key=lambda x: (
+                {'low': 0, 'medium': 1, 'high': 2}[x['priority']],
+                -x['current_amount']  # Negative for descending order
+            )
+        )
+        
+        offset_sources = []
+        remaining_delta = net_delta
+        
+        for candidate in sorted_candidates:
+            if remaining_delta <= 0:
+                break
+                
+            # Calculate maximum possible offset (up to 20% of current amount)
+            max_offset = min(
+                candidate['current_amount'] * 0.2,  # Max 20% of current amount
+                remaining_delta  # Don't exceed remaining delta
+            )
+            
+            if max_offset > 0:
+                offset_sources.append({
+                    'category': candidate['category'],
+                    'offset_amount': max_offset,
+                    'priority': candidate['priority'],
+                    'objective': candidate['objective']
+                })
+                remaining_delta -= max_offset
+        
+        return offset_sources
+
+    def _generate_detailed_recommendations(self,
+                                        offset_sources: List[Dict],
+                                        budget_deltas: List[BudgetDelta],
+                                        strategic_goals: List[Dict]) -> List[Dict]:
+        """Generate detailed offset recommendations using LLM."""
+        # Create task for LLM
+        task = Task(
+            description=f"""Generate detailed offset recommendations for the following sources:
+            
+            Offset Sources: {json.dumps(offset_sources, indent=2)}
+            Budget Changes: {json.dumps([d.dict() if isinstance(d, BudgetDelta) else d for d in budget_deltas], indent=2)}
+            Strategic Goals: {json.dumps(strategic_goals, indent=2)}
+            
+            For each offset source, provide a detailed recommendation in the following format:
+            
+            Category: [Category Name]
+            Offset Amount: [Amount to offset]
+            Rationale: [Clear explanation of why this offset is recommended]
+            Impact: [Analysis of the impact on strategic goals and educational outcomes]
+            Implementation: [Specific steps to implement the offset]
+            
+            Focus on:
+            1. Aligning offsets with strategic goals
+            2. Minimizing negative impact on educational outcomes
+            3. Ensuring sustainable budget adjustments
+            4. Maintaining service quality
+            5. Supporting student success
+            
+            IMPORTANT: You MUST follow this exact format for each category:
+            
+            Category: [Category Name]
+            Offset Amount: [Your offset amount here]
+            Rationale: [Your rationale here]
+            Impact: [Your impact analysis here]
+            Implementation: [Your implementation steps here]
+            
+            Do not include any other text or formatting. Each category should be analyzed separately with these exact headers.""",
+            expected_output="A detailed analysis of offset recommendations for budget changes, formatted as sections for each category with offset amounts, rationales, impacts, and implementation steps.",
+            agent=self.offset_agent
+        )
+
+        # Create and run crew
+        crew = Crew(
+            agents=[self.offset_agent],
+            tasks=[task],
+            verbose=True
+        )
+
+        result = crew.kickoff()
+        
+        # Handle CrewOutput object
+        if hasattr(result, 'raw_output'):
+            output_text = result.raw_output
+        else:
+            output_text = str(result)
+        
+        # Parse the output into structured recommendations
+        recommendations = []
+        sections = output_text.split('\n\n')
+        
+        for section in sections:
+            if not section.strip():
+                continue
+                
+            try:
+                # Extract category
+                category_match = re.search(r'Category:\s*(.+?)(?=\n|$)', section)
+                if not category_match:
+                    continue
+                category = category_match.group(1).strip()
+                
+                # Extract offset amount
+                amount_match = re.search(r'Offset Amount:\s*(.+?)(?=\n|$)', section)
+                offset_amount = amount_match.group(1).strip() if amount_match else ""
+                
+                # Extract rationale
+                rationale_match = re.search(r'Rationale:\s*(.+?)(?=\n|$)', section, re.DOTALL)
+                rationale = rationale_match.group(1).strip() if rationale_match else ""
+                
+                # Extract impact
+                impact_match = re.search(r'Impact:\s*(.+?)(?=\n|$)', section, re.DOTALL)
+                impact = impact_match.group(1).strip() if impact_match else ""
+                
+                # Extract implementation
+                impl_match = re.search(r'Implementation:\s*(.+?)(?=\n|$)', section, re.DOTALL)
+                implementation = impl_match.group(1).strip() if impl_match else ""
+                
+                if category and (offset_amount or rationale or impact or implementation):
+                    recommendations.append({
+                        'category': category,
+                        'offset_amount': offset_amount,
+                        'rationale': rationale,
+                        'impact': impact,
+                        'implementation': implementation
+                    })
+            except Exception as e:
+                print(f"Error parsing section: {str(e)}")
+                continue
+                
+        return recommendations
 
     def _format_budget_changes(self, budget_deltas: List[Dict]) -> str:
         """Format budget changes for the task description."""

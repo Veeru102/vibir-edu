@@ -40,79 +40,83 @@ class NarrativeGenerator:
             
             # Format insights
             formatted_insights = []
-            for insight in insights:
-                if isinstance(insight, dict):
-                    formatted_insights.append({
-                        'category': insight.get('category', ''),
-                        'insight': insight.get('insight', ''),
-                        'impact': insight.get('impact', ''),
-                        'recommendation': insight.get('recommendation', '')
-                    })
-                else:
-                    formatted_insights.append({
-                        'category': insight.category,
-                        'insight': insight.insight,
-                        'impact': insight.impact,
-                        'recommendation': insight.recommendation
-                    })
+            if insights:
+                for insight in insights:
+                    if isinstance(insight, dict):
+                        formatted_insights.append({
+                            'category': insight.get('category', ''),
+                            'insight': insight.get('insight', ''),
+                            'impact': insight.get('impact', ''),
+                            'recommendation': insight.get('recommendation', '')
+                        })
+                    else:
+                        formatted_insights.append({
+                            'category': insight.category,
+                            'insight': insight.insight,
+                            'impact': insight.impact,
+                            'recommendation': insight.recommendation
+                        })
             
             # Format offsets
             formatted_offsets = []
-            for offset in offsets:
-                if isinstance(offset, dict):
-                    formatted_offsets.append({
-                        'category': offset.get('category', ''),
-                        'offset_amount': offset.get('offset_amount', ''),
-                        'rationale': offset.get('rationale', ''),
-                        'impact': offset.get('impact', ''),
-                        'implementation': offset.get('implementation', '')
-                    })
-                else:
-                    formatted_offsets.append({
-                        'category': offset.category,
-                        'offset_amount': offset.offset_amount,
-                        'rationale': offset.rationale,
-                        'impact': offset.impact,
-                        'implementation': offset.implementation
-                    })
+            if offsets:
+                for offset in offsets:
+                    if isinstance(offset, dict):
+                        formatted_offsets.append({
+                            'category': offset.get('category', ''),
+                            'offset_amount': offset.get('offset_amount', ''),
+                            'rationale': offset.get('rationale', ''),
+                            'impact': offset.get('impact', ''),
+                            'implementation': offset.get('implementation', '')
+                        })
+                    else:
+                        formatted_offsets.append({
+                            'category': offset.category,
+                            'offset_amount': offset.offset_amount,
+                            'rationale': offset.rationale,
+                            'impact': offset.impact,
+                            'implementation': offset.implementation
+                        })
             
             # Format trade-offs
             formatted_tradeoffs = []
-            for tradeoff in tradeoffs:
-                if isinstance(tradeoff, dict):
-                    formatted_tradeoffs.append({
-                        'category': tradeoff.get('category', ''),
-                        'tradeoff': tradeoff.get('tradeoff', ''),
-                        'impact': tradeoff.get('impact', ''),
-                        'risk_level': tradeoff.get('risk_level', ''),
-                        'mitigation': tradeoff.get('mitigation', '')
-                    })
-                else:
-                    formatted_tradeoffs.append({
-                        'category': tradeoff.category,
-                        'tradeoff': tradeoff.tradeoff,
-                        'impact': tradeoff.impact,
-                        'risk_level': tradeoff.risk_level,
-                        'mitigation': tradeoff.mitigation
-                    })
+            if tradeoffs:
+                for tradeoff in tradeoffs:
+                    if isinstance(tradeoff, dict):
+                        formatted_tradeoffs.append({
+                            'category': tradeoff.get('category', ''),
+                            'tradeoff': tradeoff.get('tradeoff', ''),
+                            'impact': tradeoff.get('impact', ''),
+                            'risk_level': tradeoff.get('risk_level', ''),
+                            'mitigation': tradeoff.get('mitigation', '')
+                        })
+                    else:
+                        formatted_tradeoffs.append({
+                            'category': tradeoff.category,
+                            'tradeoff': tradeoff.tradeoff,
+                            'impact': tradeoff.impact,
+                            'risk_level': tradeoff.risk_level,
+                            'mitigation': tradeoff.mitigation
+                        })
             
             # Format strategic goals
             formatted_goals = []
-            for goal in strategic_goals:
-                if isinstance(goal, dict):
-                    formatted_goals.append({
-                        'category': goal.get('category', ''),
-                        'objective': goal.get('objective', ''),
-                        'priority': goal.get('priority', '')
-                    })
-                else:
-                    formatted_goals.append({
-                        'category': goal.category,
-                        'objective': goal.objective,
-                        'priority': goal.priority
-                    })
+            if strategic_goals:
+                for goal in strategic_goals:
+                    if isinstance(goal, dict):
+                        formatted_goals.append({
+                            'category': goal.get('category', ''),
+                            'objective': goal.get('objective', ''),
+                            'priority': goal.get('priority', '')
+                        })
+                    else:
+                        formatted_goals.append({
+                            'category': goal.category,
+                            'objective': goal.objective,
+                            'priority': goal.priority
+                        })
             
-            # Create task
+            # Create task with reduced verbosity
             task = Task(
                 description=f"""Generate a comprehensive narrative summary for scenario {scenario_id}:
 
@@ -147,11 +151,11 @@ IMPORTANT: The output MUST be a valid JSON object with these exact fields.""",
                 agent=self.narrative_agent
             )
 
-            # Create and run crew
+            # Create and run crew with reduced verbosity
             crew = Crew(
                 agents=[self.narrative_agent],
                 tasks=[task],
-                verbose=True
+                verbose=False  # Set to False to reduce output verbosity
             )
 
             result = crew.kickoff()

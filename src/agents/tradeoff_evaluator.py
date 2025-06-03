@@ -60,13 +60,23 @@ class TradeOffEvaluator:
                         'priority': goal.priority
                     })
             
+            # Convert current budget to dictionary format if it's a DataFrame
+            current_budget_dict = {}
+            if hasattr(current_budget, 'to_dict'):
+                current_budget_dict = current_budget.to_dict('records')
+            elif isinstance(current_budget, dict):
+                current_budget_dict = current_budget
+            else:
+                # Handle other cases by converting to dict
+                current_budget_dict = {str(k): float(v) for k, v in current_budget.items()}
+            
             # Create task
             task = Task(
                 description=f"""Analyze the following budget changes, strategic goals, and current budget to evaluate trade-offs:
                 
                 Budget Changes: {json.dumps(budget_changes_dict, indent=2)}
                 Strategic Goals: {json.dumps(strategic_goals_dict, indent=2)}
-                Current Budget: {json.dumps(current_budget, indent=2)}
+                Current Budget: {json.dumps(current_budget_dict, indent=2)}
                 
                 For each significant trade-off, provide an analysis in the following format:
                 
